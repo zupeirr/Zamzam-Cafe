@@ -1,0 +1,79 @@
+[
+  {
+    "id": "ZZC-83303-640",
+    "status": "pending",
+    "createdAt": "2026-07-13T11:23:03.303Z",
+    "customer": {
+      "phone": "0612345678",
+      "tableNumber": "5"
+    },
+    "orderType": "dine-in",
+    "items": [
+      {
+        "id": 1,
+        "title": "Espresso",
+        "price": "0.71$",
+        "quantity": 2
+      },
+      {
+        "id": 2,
+        "title": "Cappuccino",
+        "price": "0.83$",
+        "quantity": 1
+      }
+    ],
+    "paymentMethod": "cash",
+    "notes": "No sugar please",
+    "totalAmount": "2.25"
+  },
+  {
+    "id": "ZZC-52129-853",
+    "status": "pending",
+    "createdAt": "2026-07-13T11:30:52.129Z",
+    "customer": {
+      "fullName": "",
+      "phone": "22453666",
+      "tableNumber": "7",
+      "pickupTime": "",
+      "address": "",
+      "landmark": ""
+    },
+    "orderType": "dine-in",
+    "items": [
+      {
+        "id": 3,
+        "title": "Latte",
+        "price": "0.90$",
+        "quantity": 8
+      }
+    ],
+    "paymentMethod": "cash",
+    "notes": "",
+    "totalAmount": "7.20"
+  },
+  {
+    "id": "ZZC-09799-385",
+    "status": "pending",
+    "createdAt": "2026-07-13T11:45:09.799Z",
+    "customer": {
+      "fullName": "SUBER",
+      "phone": "0973772634",
+      "tableNumber": "",
+      "pickupTime": "17:46",
+      "address": "",
+      "landmark": ""
+    },
+    "orderType": "takeaway",
+    "items": [
+      {
+        "id": 1,
+        "title": "Espresso",
+        "price": "0.71$",
+        "quantity": 5
+      }
+    ],
+    "paymentMethod": "edahab",
+    "notes": "",
+    "totalAmount": "3.55"
+  }
+]
