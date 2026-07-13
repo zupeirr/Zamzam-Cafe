@@ -76,7 +76,3 @@ Your app will be available at `http://localhost:5173` (or another port depending
 ---
 
 
-
-## Contact
-
-For questions, contact [salitech.2008@gmail.com](mailto:salitech.2008@gmail.com)
