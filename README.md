@@ -75,17 +75,7 @@ Your app will be available at `http://localhost:5173` (or another port depending
 
 ---
 
-## Contributing
 
-Contributions are welcome! Please submit a pull request or open an issue for feature requests or bugs.
-
----
-
-## License
-
-This project is licensed under the CC BY-NC License.
-
----
 
 ## Contact
 
