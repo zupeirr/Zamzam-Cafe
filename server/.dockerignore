@@ -1,0 +1,6 @@
+node_modules/
+npm-debug.log
+*.db
+orders.json
+.env
+.git/
