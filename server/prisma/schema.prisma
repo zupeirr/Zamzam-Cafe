@@ -1,0 +1,442 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  Zamzam Cafe — Prisma Schema
+//  Provider: sqlite (dev) → switch to mysql by changing provider + DATABASE_URL
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─── MENU ────────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String     @id
+  name      String
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @default("")
+  price       Int      // cents
+  categoryId  String
+  image       String   @default("")
+  isAvailable Boolean  @default(true)
+  barcode     String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+
+  category         Category          @relation(fields: [categoryId], references: [id])
+  productModifiers ProductModifier[]
+  inventory        Inventory?
+  stockMovements   StockMovement[]
+
+  @@map("menu_items")
+}
+
+// ─── STAFF ───────────────────────────────────────────────────────────────────
+
+model Staff {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  role       String    @default("staff") // owner | manager | cashier | kitchen | staff
+  isActive   Boolean   @default(true)
+  pin        String?
+  createdAt  DateTime  @default(now())
+
+  shifts          Shift[]
+  stockMovements  StockMovement[]
+  auditLogs       AuditLog[]
+  managerReports  ManagerReport[]
+
+  // Enterprise: Payroll & Attendance
+  attendance      Attendance[]
+  payroll         Payroll[]
+  schedules       ShiftSchedule[]
+
+  @@map("staff")
+}
+
+// ─── ORDERS ──────────────────────────────────────────────────────────────────
+
+model Order {
+  id            String    @id
+  status        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime?
+  customer      String    // JSON
+  orderType     String
+  items         String    // JSON
+  paymentMethod String
+  notes         String    @default("")
+  totalAmount   Int       // cents
+  discountAmount Int      @default(0) // cents
+  staffId       Int?
+  shiftId       Int?
+
+  @@map("orders")
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+
+model Setting {
+  key   String @id
+  value String // JSON string
+
+  @@map("settings")
+}
+
+// ─── CUSTOMERS & LOYALTY ─────────────────────────────────────────────────────
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  name      String    @default("")
+  phone     String    @unique
+  email     String    @default("")
+  createdAt DateTime  @default(now())
+
+  loyalty   Loyalty?
+
+  @@map("customers")
+}
+
+model Loyalty {
+  customerId     Int      @id
+  points         Int      @default(0)
+  lifetimePoints Int      @default(0)
+  totalSpent     Int      @default(0)
+  totalOrders    Int      @default(0)
+  updatedAt      DateTime?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("loyalty")
+}
+
+// ─── CAFE TABLES ─────────────────────────────────────────────────────────────
+
+model CafeTable {
+  id       Int    @id @default(autoincrement())
+  number   Int    @unique
+  capacity Int    @default(4)
+  status   String @default("available") // available | occupied | reserved | cleaning
+
+  @@map("cafe_tables")
+}
+
+// ─── MODIFIERS ───────────────────────────────────────────────────────────────
+
+model Modifier {
+  id          Int              @id @default(autoincrement())
+  name        String
+  required    Boolean          @default(false)
+  multiSelect Boolean          @default(false)
+
+  options          ModifierOption[]
+  productModifiers ProductModifier[]
+
+  @@map("modifiers")
+}
+
+model ModifierOption {
+  id              Int  @id @default(autoincrement())
+  modifierId      Int
+  label           String
+  priceAdjustment Int  @default(0)
+
+  modifier Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+
+  @@map("modifier_options")
+}
+
+model ProductModifier {
+  productId  Int
+  modifierId Int
+
+  product  MenuItem @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifier Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+
+  @@id([productId, modifierId])
+  @@map("product_modifiers")
+}
+
+// ─── INVENTORY ───────────────────────────────────────────────────────────────
+
+model Inventory {
+  id                Int       @id @default(autoincrement())
+  productId         Int       @unique
+  quantity          Int       @default(0)
+  unit              String    @default("units")
+  lowStockThreshold Int       @default(5)
+  updatedAt         DateTime?
+
+  product MenuItem @relation(fields: [productId], references: [id])
+
+  @@map("inventory")
+}
+
+model StockMovement {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  type      String   // in | out | adjust
+  qty       Int
+  reason    String   @default("")
+  staffId   Int?
+  createdAt DateTime @default(now())
+
+  product MenuItem @relation(fields: [productId], references: [id])
+  staff   Staff?   @relation(fields: [staffId], references: [id])
+
+  @@map("stock_movements")
+}
+
+// ─── SUPPLIERS & PURCHASE ORDERS ─────────────────────────────────────────────
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String   @default("")
+  email     String   @default("")
+  address   String   @default("")
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id          Int       @id @default(autoincrement())
+  supplierId  Int
+  status      String    @default("pending") // pending | received | cancelled
+  items       String    @default("[]")      // JSON
+  totalAmount Int       @default(0)         // cents
+  notes       String    @default("")
+  createdAt   DateTime  @default(now())
+  receivedAt  DateTime?
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@map("purchase_orders")
+}
+
+// ─── PROMOTIONS ──────────────────────────────────────────────────────────────
+
+model Promotion {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  type      String    @default("flat") // flat | percent
+  value     Int       @default(0)
+  minOrder  Int       @default(0)
+  maxUses   Int       @default(0)
+  usedCount Int       @default(0)
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  @@map("promotions")
+}
+
+// ─── SHIFTS / CASH MANAGEMENT ────────────────────────────────────────────────
+
+model Shift {
+  id            Int       @id @default(autoincrement())
+  staffId       Int
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  openingFloat  Int       @default(0)  // cents
+  closingFloat  Int?
+  notes         String    @default("")
+  status        String    @default("open") // open | closed
+
+  staff         Staff          @relation(fields: [staffId], references: [id])
+  cashMovements CashMovement[]
+
+  @@map("shifts")
+}
+
+model CashMovement {
+  id        Int      @id @default(autoincrement())
+  shiftId   Int
+  type      String   // in | out
+  amount    Int      // cents
+  reason    String   @default("")
+  createdAt DateTime @default(now())
+
+  shift Shift @relation(fields: [shiftId], references: [id])
+
+  @@map("cash_movements")
+}
+
+// ─── AUDIT LOGS ──────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  staffId   Int?
+  staffName String   @default("System")
+  action    String   // CREATE | UPDATE | DELETE | LOGIN | LOGOUT
+  entity    String
+  entityId  String?
+  details   String   @default("{}") // JSON
+  createdAt DateTime @default(now())
+
+  staff Staff? @relation(fields: [staffId], references: [id])
+
+  @@map("audit_logs")
+}
+
+// ─── MANAGER REPORTS ─────────────────────────────────────────────────────────
+
+model ManagerReport {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  staffName String
+  message   String
+  shiftId   Int?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@map("manager_reports")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ENTERPRISE MODULES
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─── ATTENDANCE ──────────────────────────────────────────────────────────────
+
+model Attendance {
+  id         Int       @id @default(autoincrement())
+  staffId    Int
+  clockIn    DateTime  @default(now())
+  clockOut   DateTime?
+  hoursWorked Float?
+  notes      String   @default("")
+  date       String   // YYYY-MM-DD for quick date lookup
+  createdAt  DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@map("attendance")
+}
+
+// ─── SHIFT SCHEDULING ────────────────────────────────────────────────────────
+
+model ShiftSchedule {
+  id        Int      @id @default(autoincrement())
+  staffId   Int
+  date      String   // YYYY-MM-DD
+  startTime String   // HH:MM
+  endTime   String   // HH:MM
+  role      String   @default("staff")
+  notes     String   @default("")
+  status    String   @default("scheduled") // scheduled | confirmed | cancelled
+  createdAt DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@map("shift_schedules")
+}
+
+// ─── PAYROLL ─────────────────────────────────────────────────────────────────
+
+model Payroll {
+  id            Int      @id @default(autoincrement())
+  staffId       Int
+  periodStart   String   // YYYY-MM-DD
+  periodEnd     String   // YYYY-MM-DD
+  hoursWorked   Float    @default(0)
+  hourlyRate    Int      @default(0) // cents per hour
+  grossPay      Int      @default(0) // cents
+  deductions    Int      @default(0) // cents
+  netPay        Int      @default(0) // cents
+  status        String   @default("draft") // draft | approved | paid
+  notes         String   @default("")
+  paidAt        DateTime?
+  createdAt     DateTime @default(now())
+
+  staff Staff @relation(fields: [staffId], references: [id])
+
+  @@map("payroll")
+}
+
+// ─── FINANCIAL ACCOUNTING ────────────────────────────────────────────────────
+
+// General ledger transaction
+model Transaction {
+  id          Int       @id @default(autoincrement())
+  type        String    // income | expense | transfer | adjustment
+  category    String    // sales | cogs | payroll | rent | utilities | supplies | tax | other
+  amount      Int       // cents (positive = debit, negative = credit)
+  description String
+  reference   String?   // e.g. order ID, PO number, payroll ID
+  date        String    // YYYY-MM-DD
+  createdBy   Int?      // staffId
+  createdAt   DateTime  @default(now())
+
+  @@map("transactions")
+}
+
+// Daily cash reconciliation
+model CashReconciliation {
+  id              Int      @id @default(autoincrement())
+  date            String   // YYYY-MM-DD
+  openingBalance  Int      @default(0) // cents
+  cashSales       Int      @default(0)
+  cashIn          Int      @default(0)
+  cashOut         Int      @default(0)
+  expectedBalance Int      @default(0)
+  actualBalance   Int      @default(0)
+  variance        Int      @default(0) // actual - expected (negative = shortage)
+  notes           String   @default("")
+  approvedBy      Int?
+  status          String   @default("pending") // pending | approved | discrepancy
+  createdAt       DateTime @default(now())
+
+  @@map("cash_reconciliations")
+}
+
+// Expense tracking
+model Expense {
+  id          Int      @id @default(autoincrement())
+  category    String   // rent | utilities | supplies | maintenance | marketing | other
+  amount      Int      // cents
+  description String
+  vendor      String   @default("")
+  receiptUrl  String   @default("")
+  date        String   // YYYY-MM-DD
+  approvedBy  Int?
+  status      String   @default("pending") // pending | approved | rejected
+  createdAt   DateTime @default(now())
+
+  @@map("expenses")
+}
+
+// Tax periods
+model TaxRecord {
+  id          Int      @id @default(autoincrement())
+  period      String   // e.g. "2024-Q1", "2024-07"
+  periodType  String   @default("monthly") // monthly | quarterly | annual
+  taxableIncome Int    @default(0) // cents
+  taxRate     Float    @default(0) // percentage
+  taxAmount   Int      @default(0) // cents
+  status      String   @default("draft") // draft | filed | paid
+  dueDate     String?
+  paidAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@map("tax_records")
+}

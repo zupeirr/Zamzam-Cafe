@@ -5,6 +5,8 @@ import Header from './components/Header';
 import CartDrawer from './components/CartDrawer';
 import HomePage from './pages/HomePage';
 import CheckoutPage from './pages/CheckoutPage';
+import NotFoundPage from './pages/NotFoundPage';
+import Footer from './components/Footer';
 
 function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -18,6 +20,16 @@ function App() {
 
   const navigate = (path) => {
     window.location.hash = path;
+  };
+
+  const renderContent = () => {
+    if (currentRoute === '#/' || currentRoute === '#' || currentRoute === '') {
+      return <HomePage />;
+    } else if (currentRoute === '#/checkout') {
+      return <CheckoutPage navigate={navigate} />;
+    } else {
+      return <NotFoundPage navigate={navigate} />;
+    }
   };
 
   return (
@@ -35,12 +47,10 @@ function App() {
         />
         
         <div className="flex-1 pt-[60px] md:pt-[80px] lg:pt-[100px]">
-          {currentRoute === '#/checkout' ? (
-            <CheckoutPage navigate={navigate} />
-          ) : (
-            <HomePage />
-          )}
+          {renderContent()}
         </div>
+
+        <Footer />
       </div>
     </CartProvider>
   )

@@ -3,7 +3,7 @@ import { X, Minus, Plus, Trash2 } from './Icons';
 import { useCart } from '../context/CartContext';
 
 export default function CartDrawer({ isOpen, onClose, navigate }) {
-  const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, getCartTotalDisplay } = useCart();
 
   const handleCheckout = () => {
     onClose();
@@ -61,7 +61,7 @@ export default function CartDrawer({ isOpen, onClose, navigate }) {
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <h3 className="font-semibold text-brown">{item.title}</h3>
-                      <p className="text-sm text-gray-500">{item.price}</p>
+                      <p className="text-sm text-gray-500">${(item.price / 100).toFixed(2)}</p>
                     </div>
                     
                     <div className="flex items-center justify-between mt-2">
@@ -100,7 +100,7 @@ export default function CartDrawer({ isOpen, onClose, navigate }) {
             <div className="flex justify-between items-center mb-4">
               <span className="font-semibold text-gray-600">Subtotal:</span>
               <span className="text-xl font-bold text-brown">
-                {getCartTotal().toFixed(2)}$
+                {getCartTotalDisplay()}
               </span>
             </div>
             <button 
