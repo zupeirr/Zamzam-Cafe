@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { ArrowLeft, CheckCircle2 } from '../components/Icons';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export default function CheckoutPage({ navigate }) {
   const { cartItems, getCartTotal, clearCart } = useCart();
@@ -29,9 +29,10 @@ export default function CheckoutPage({ navigate }) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const subtotal = getCartTotal();
-  const deliveryFee = orderType === 'delivery' ? 2.00 : 0;
-  const total = subtotal + deliveryFee;
+  // All prices in integer CENTS
+  const subtotalCents  = getCartTotal();            // e.g. 154
+  const deliveryFeeCents = orderType === 'delivery' ? 200 : 0;
+  const totalCents     = subtotalCents + deliveryFeeCents;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,7 +57,7 @@ export default function CheckoutPage({ navigate }) {
       })),
       paymentMethod,
       notes: formData.notes,
-      totalAmount: total.toFixed(2),
+      totalAmount: totalCents,     // send integer cents to server
     };
 
     try {
@@ -315,7 +316,7 @@ export default function CheckoutPage({ navigate }) {
                       {item.title}
                     </span>
                     <span className="font-medium text-gray-800">
-                      {(parseFloat(item.price.replace('$', '')) * item.quantity).toFixed(2)}$
+                      ${((item.price * item.quantity) / 100).toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -324,17 +325,17 @@ export default function CheckoutPage({ navigate }) {
               <div className="border-t pt-4 space-y-2 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>{subtotal.toFixed(2)}$</span>
+                  <span>${(subtotalCents / 100).toFixed(2)}</span>
                 </div>
                 {orderType === 'delivery' && (
                   <div className="flex justify-between text-gray-600">
                     <span>Delivery Fee</span>
-                    <span>{deliveryFee.toFixed(2)}$</span>
+                    <span>${(deliveryFeeCents / 100).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-xl font-bold text-brown pt-2 border-t mt-2">
                   <span>Total</span>
-                  <span>{total.toFixed(2)}$</span>
+                  <span>${(totalCents / 100).toFixed(2)}</span>
                 </div>
               </div>
 

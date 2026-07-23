@@ -2,6 +2,14 @@ import React, { useState } from 'react'
 import { Plus } from './Icons'
 import { useCart } from '../context/CartContext'
 
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace('/api', '')
+
+function getImageSrc(image) {
+  if (!image) return null
+  if (image.startsWith('http')) return image // already absolute
+  return `${API_BASE}${image}`
+}
+
 export default function ProductBox({ product }) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [hasImageError, setHasImageError] = useState(false)
@@ -11,15 +19,15 @@ export default function ProductBox({ product }) {
     <div className="group border-2 border-cream rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:border-brown transition-all duration-300 flex flex-col h-full bg-white">
       <div className="relative aspect-[21/9] overflow-hidden rounded-t-lg bg-cream flex items-center justify-center">
         {hasImageError || !product.image ? (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-cream text-brown/65 p-2 select-none">
-            <svg className="w-7 h-7 mb-1 opacity-75" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.35-7.24 10.5 10.5 0 0 0-16.59-3.41m0 0A5 5 0 0 1 12 5.25a5 5 0 0 1 7.14 7.3a1.5 1.5 0 0 0-2.91.56A1.5 1.5 0 0 0 17.25 15" />
-            </svg>
-            <span className="text-xs font-body font-medium">No Image Available</span>
-          </div>
+          <img 
+            src="https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&w=400&q=80"
+            alt={product.title}
+            className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 opacity-100`}
+            loading="lazy"
+          />
         ) : (
           <img 
-            src={product.image} 
+            src={getImageSrc(product.image)}
             alt={product.title}
             className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
